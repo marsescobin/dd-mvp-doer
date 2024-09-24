@@ -45,9 +45,9 @@ function App() {
       alert('All fields are required')
       return
     }
-    const fullExperience = "I worked as a " + newExperience.title
+    const fullExperience = newExperience.title
       + " at " + newExperience.company + " for " +
-      newExperience.duration + " months. Here's a summary of what I did"
+      newExperience.duration + " months. Accomplishments include:"
       + ": " + newExperience.description
 
     // Create embedding for experience description
