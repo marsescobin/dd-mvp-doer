@@ -47,8 +47,8 @@ function App() {
     }
     const fullExperience = newExperience.title
       + " at " + newExperience.company + " for " +
-      newExperience.duration + " months. Accomplishments include:"
-      + ": " + newExperience.description
+      newExperience.duration + " months."
+      + "\n" + newExperience.description
 
     // Create embedding for experience description
     const openAIWorkerUrl = "https://openai-worker.marsescobin.workers.dev/"
