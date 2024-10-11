@@ -100,7 +100,8 @@ button:focus-visible {
   }
 }
 
-.timezone-container {
+.timezone-container,
+.pronouns-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -112,6 +113,8 @@ button:focus-visible {
   /* Ensures checkbox and text align vertically */
 }
 
+
+
 .currently-employed-container {
   display: flex;
   flex-direction: row;
@@ -119,10 +122,11 @@ button:focus-visible {
 }
 
 .timezone-container label,
-.currently-employed label {
+.currently-employed label,
+.pronouns-container label {
   display: inline-flex;
   align-items: center;
-  margin: 0;
+  margin: 10px;
 }
 
 .timezone-container span {
@@ -190,7 +194,8 @@ textarea {
   /* Add some padding for better appearance */
 }
 
-input[type="checkbox"] {
+input[type="checkbox"],
+input[type="radio"] {
   appearance: none;
   border-radius: 100px;
   /* Removes default styling */
@@ -206,14 +211,24 @@ input[type="checkbox"] {
   /* Changes cursor on hover */
 }
 
-input[type="checkbox"]:checked {
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
   background: linear-gradient(45deg, rgba(147, 138, 227, 0.5) 45%, rgba(242, 168, 156, 0.5) 100%);
 
   /* Change color when checked */
   /* Border color when checked */
 }
 
+
+
 .addExperience {
   background-color: white;
   color: #535bf2;
+}
+
+
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  /* Ensures the cursor is a pointer over the calendar icon */
 }

@@ -7,36 +7,36 @@ import { nanoid } from 'nanoid' // Import nanoid
 
 function App() {
   //basic info
+  const savedData = JSON.parse(localStorage.getItem('formData'));
   const [applicationId, setApplicationId] = useState(nanoid()) // Generate a nanoid for the application
   const [firstName, setFirstName] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.firstName || '';
   });
   const [lastName, setLastName] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.lastName || '';
   });
   const [email, setEmail] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.email || '';
   });
   const [professionalSummary, setProfessionalSummary] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.professionalSummary || '';
   });
   const [hoursAvailability, setHoursAvailability] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.hoursAvailability || '';
   });
   const [selectedTimezones, setSelectedTimezones] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.selectedTimezones || [];
   });
   const [isSubmitted, setIsSubmitted] = useState(false); // New state to track form submission
   const [experiences, setExperiences] = useState(() => {
-    const savedData = JSON.parse(localStorage.getItem('formData'));
     return savedData?.experiences || [];
   });
+  const [training, setTraining] = useState(() => {
+    return savedData?.training || [];
+  });
+  const [selectedPronouns, setSelectedPronouns] = useState(() => {
+    return savedData?.selectedPronouns || '';
+  }); // Initialize state for pronouns
 
   // Save form data to local storage whenever it changes
   useEffect(() => {
@@ -48,6 +48,7 @@ function App() {
       hoursAvailability,
       selectedTimezones,
       experiences,
+      selectedPronouns
     };
     localStorage.setItem('formData', JSON.stringify(formData));
   }, [firstName, lastName, email, professionalSummary, hoursAvailability, selectedTimezones, experiences]);
@@ -95,6 +96,10 @@ function App() {
       alert('Please fill out all fields in the last experience form before adding a new one.');
     }
   };
+
+  const handleAddTraining = () => {
+    setTraining([...training, { certification: '', institution: '', completionDate: '' }]);
+  }
 
   // Function to handle input change for a specific experience
   const handleExperienceInputChange = (index, e) => {
@@ -144,6 +149,12 @@ function App() {
     }
   };
 
+  // Handler function for pronoun selection
+  const handlePronounsChange = (e) => {
+    const newPronoun = e.target.value;
+    setSelectedPronouns(newPronoun); // Update state with selected pronoun
+
+  }
   // Update function name
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -287,17 +298,34 @@ function App() {
                   </label>
                 </div>
               </div>
+              <div className='form-group'>
+                <label>Preferred Pronouns</label>
+                <div className="pronouns-container">
+                  <label>
+                    <input type="radio" name="pronouns" value="he/him" onChange={handlePronounsChange} checked={selectedPronouns === "he/him"} />
+                    <span>He/Him</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="pronouns" value="she/her" onChange={handlePronounsChange} checked={selectedPronouns === "she/her"} />
+                    <span>She/Her</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="pronouns" value="they/them" onChange={handlePronounsChange} checked={selectedPronouns === "they/them"} />
+                    <span>They/Them</span>
+                  </label>
+                </div>
+              </div>
             </div>
             {experiences.map((experience, index) => (
               <div key={index} className='workExperience'>
-                <h2>Add Experience</h2>
+                <h2>Work Experience {index + 1}</h2>
                 <div className="form-group">
                   <label htmlFor={`role-${index}`}>Role</label>
-                  <input type="text" id={`role-${index}`} name="role" value={experience.role} onChange={(e) => handleExperienceInputChange(index, e)} />
+                  <input type="text" id={`role-${index}`} placeholder="Add your role or job title" name="role" value={experience.role} onChange={(e) => handleExperienceInputChange(index, e)} />
                 </div>
                 <div className="form-group">
                   <label htmlFor={`company-${index}`}>Company or Client Name</label>
-                  <input type="text" id={`company-${index}`} name="company" value={experience.company} onChange={(e) => handleExperienceInputChange(index, e)} />
+                  <input type="text" id={`company-${index}`} placeholder="Add the company or client name" name="company" value={experience.company} onChange={(e) => handleExperienceInputChange(index, e)} />
                 </div>
                 <div className="form-group">
                   <label htmlFor={`accomplishments-${index}`}>Notable Accomplishments</label>
@@ -305,7 +333,7 @@ function App() {
                 </div>
                 <div className="form-group">
                   <label htmlFor={`softwareUsed-${index}`}>Software used</label>
-                  <input type="text" id={`softwareUsed-${index}`} name="softwareUsed" value={experience.softwareUsed} onChange={(e) => handleExperienceInputChange(index, e)} />
+                  <input type="text" id={`softwareUsed-${index}`} placeholder="Add the software/s you mainly used in this role" name="softwareUsed" value={experience.softwareUsed} onChange={(e) => handleExperienceInputChange(index, e)} />
                 </div>
                 <div className="form-group date-container">
                   <div>
@@ -334,6 +362,7 @@ function App() {
             <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
               Add {experiences.length === 0 ? '' : 'Another'} Experience
             </button>
+            <button className="addTraining" onClick={handleAddTraining}>Add Certifications and Education</button>
             <button type="submit">Submit</button>
           </form>
         </div>
