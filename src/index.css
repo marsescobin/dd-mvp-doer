@@ -40,7 +40,7 @@ h1 {
   font-size: 3.2em;
   line-height: 1.1;
   margin-right: auto;
-  margin: 0 auto 0 0;
+  margin: 1rem auto 0 0;
 }
 
 
@@ -112,7 +112,14 @@ button:focus-visible {
   /* Ensures checkbox and text align vertically */
 }
 
-.timezone-container label {
+.currently-employed-container {
+  display: flex;
+  flex-direction: row;
+  margin-left: auto;
+}
+
+.timezone-container label,
+.currently-employed label {
   display: inline-flex;
   align-items: center;
   margin: 0;
@@ -162,10 +169,16 @@ button:focus-visible {
   /* Include padding and border in total width and height */
 }
 
-.name-container {
+.name-container,
+.date-container {
   gap: 1rem;
   flex-direction: row;
 
+}
+
+.date-container input {
+  margin: auto;
+  justify-content: space-evenly;
 }
 
 
