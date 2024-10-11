@@ -2,15 +2,17 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
+  box-sizing: border-box;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background: linear-gradient(45deg, rgba(147, 138, 227, 0.5) 45%, rgba(242, 168, 156, 0.5) 100%);
+  ;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
 }
 
 a {
@@ -18,6 +20,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -28,12 +31,38 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  margin-right: auto;
+  margin: 0 auto 0 0;
 }
+
+
+
+.label-name {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: space-evenly;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  /* Optional: distribute space between the components */
+}
+
+.label-firstName,
+.label-lastName {
+  width: 45%;
+
+}
+
+
+
 
 button {
   border-radius: 8px;
@@ -46,9 +75,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -59,10 +90,117 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
+}
+
+.timezone-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  grid-template-columns: repeat(5fr, 50px)/repeat(1, auto);
+  justify-content: center;
+  grid-template-rows: 1fr;
+  /* Allows wrapping if the container is too small */
+  align-items: center;
+  /* Ensures checkbox and text align vertically */
+}
+
+.timezone-container label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+.timezone-container span {
+  margin-right: 5px;
+  /* Adjust space between text and checkbox */
+}
+
+.timezone-container input {
+  min-width: 0;
+}
+
+.form-group {
+  display: flex;
+  /* Use flexbox for alignment */
+  align-items: center;
+  justify-content: space-evenly;
+  /* Center items vertically */
+  margin-bottom: 10px;
+  /* Space between form groups */
+}
+
+.form-group label {
+
+
+  white-space: nowrap;
+  text-align: right;
+  margin-right: auto;
+
+}
+
+.form-group input {
+  width: 100%;
+  /* Make inputs take full width of their container */
+  height: 40px;
+  /* Set a consistent height */
+  padding: 0.5rem;
+  /* Add padding for better appearance */
+  border: 1px solid #ccc;
+  /* Border style */
+  border-radius: 4px;
+  /* Rounded corners */
+  box-sizing: border-box;
+  margin: auto 1rem;
+  /* Include padding and border in total width and height */
+}
+
+.name-container {
+  gap: 1rem;
+  flex-direction: row;
+
+}
+
+
+
+textarea {
+  flex: 1;
+  /* Allow input to take up remaining space */
+  padding: 8px;
+  /* Add some padding for better appearance */
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  border-radius: 100px;
+  /* Removes default styling */
+  width: 20px;
+  /* Custom width */
+  height: 20px;
+  /* Custom height */
+  background-color: white;
+  /* White background */
+  /* Adds a border */
+  /* Rounds the corners */
+  cursor: pointer;
+  /* Changes cursor on hover */
+}
+
+input[type="checkbox"]:checked {
+  background: linear-gradient(45deg, rgba(147, 138, 227, 0.5) 45%, rgba(242, 168, 156, 0.5) 100%);
+
+  /* Change color when checked */
+  /* Border color when checked */
+}
+
+.addExperience {
+  background-color: white;
+  color: #535bf2;
 }

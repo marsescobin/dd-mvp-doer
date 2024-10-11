@@ -6,35 +6,70 @@ import { nanoid } from 'nanoid' // Import nanoid
 // Initialize Supabase client
 
 function App() {
-  const [name, setName] = useState('')
-  const [hours, setHours] = useState('')
-  const [experiences, setExperiences] = useState([])
-  const [showForm, setShowForm] = useState(false)
-  const [newExperience, setNewExperience] = useState({
-    title: '',
-    company: '',
-    description: '',
-    duration: ''
-  })
+  //basic info
   const [userId, setUserId] = useState(nanoid()) // Generate a nanoid for the user
-
-  // New state for the form fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [summary, setSummary] = useState('')
-  const [hoursAvailability, setHoursAvailability] = useState('')
-  const [timezone, setTimezone] = useState('')
-
-  const [selectedTimezones, setSelectedTimezones] = useState([]); // New state for selected timezones
-
-  const [isInfoSaved, setIsInfoSaved] = useState(false); // New state to track if user info is saved
-
   const [email, setEmail] = useState(''); // New state for email
+  const [professionalSummary, setProfessionalSummary] = useState('') // Updated state variable
+  const [hoursAvailability, setHoursAvailability] = useState('')
+  const [selectedTimezones, setSelectedTimezones] = useState([]); // New state for selected timezones
+  const [isInfoSaved, setIsInfoSaved] = useState(false); // New state to track if user info is saved
+  const [experiences, setExperiences] = useState([]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setNewExperience({ ...newExperience, [name]: value })
+
+  // Function to check if the last experience form is complete
+  const isLastExperienceComplete = () => {
+    if (experiences.length === 0) return true; // Allow adding the first experience
+    const lastExperience = experiences[experiences.length - 1];
+    // Check if all fields are filled, except endDate if currentlyEmployed is true
+    return Object.entries(lastExperience).every(([key, value]) => {
+      if (key === 'endDate' && lastExperience.currentlyEmployed) return true;
+      return value !== '';
+    });
+  };
+
+  const embedInfo = async (info) => {
+    const formattedExperiences = experiences.map((exp, index) => {
+      const endDate = exp.currentlyEmployed ? 'present' : exp.endDate;
+      return `${index + 1}. ${exp.role} at ${exp.company} from ${exp.startDate} to ${endDate}. Their notable accomplishments include:\n- ${exp.accomplishments.split('. ').join('\n- ')}\n\nThey used the following software in that role:\n- ${exp.softwareUsed.split(', ').join('\n- ')}.`;
+    }).join('\n\n');
+
+    const formSummary = `${firstName} ${lastName} is available to work ${hoursAvailability} hours per week in the following timezones: ${selectedTimezones.join(", ")}.\n\n` +
+      `Their professional summary says: ${professionalSummary}\n\n` +
+      `Their work experiences are:\n${formattedExperiences}`;
+
+    const openAIWorkerUrl = "https://openai-worker.marsescobin.workers.dev/";
+    const workerResponse = await fetch(openAIWorkerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: info,
+      }),
+    });
+    const workerResponseInJSON = await workerResponse.json();
+    const embedding = workerResponseInJSON.data[0].embedding;
+    return embedding;
   }
+
+  // Function to add a new experience form
+  const handleAddExperience = () => {
+    if (isLastExperienceComplete()) {
+      setExperiences([...experiences, { role: '', company: '', accomplishments: '', startDate: '', endDate: '', currentlyEmployed: false, softwareUsed: '' }]);
+    } else {
+      alert('Please fill out all fields in the last experience form before adding a new one.');
+    }
+  };
+
+  // Function to handle input change for a specific experience
+  const handleExperienceInputChange = (index, e) => {
+    const { name, value, type, checked } = e.target;
+    const newExperiences = [...experiences];
+    newExperiences[index][name] = type === 'checkbox' ? checked : value;
+    setExperiences(newExperiences);
+  };
 
   // New handlers for the new fields
   const handleFirstNameChange = (e) => {
@@ -45,99 +80,60 @@ function App() {
     setLastName(e.target.value)
   }
 
-  const handleSummaryChange = (e) => {
-    setSummary(e.target.value)
+  const handleProfessionalSummaryChange = (e) => { // Updated handler
+    setProfessionalSummary(e.target.value)
   }
 
   const handleHoursAvailabilityChange = (e) => {
     setHoursAvailability(e.target.value)
   }
 
+  // Function to handle timezone selection
   const handleTimezoneChange = (e) => {
-    const { value } = e.target;
-    setSelectedTimezones((prev) => {
-      if (prev.includes(value)) {
-        // If already selected, remove it
-        return prev.filter((tz) => tz !== value);
-      } else {
-        // If not selected, add it
-        return [...prev, value];
-      }
-    });
+    const { value, checked } = e.target;
+    if (checked) {
+      // Add the selected timezone to the array
+      setSelectedTimezones([...selectedTimezones, value]);
+    } else {
+      // Remove the unselected timezone from the array
+      setSelectedTimezones(selectedTimezones.filter((timezone) => timezone !== value));
+    }
   };
 
-  const handleAddExperience = () => {
-    if (showForm && (!newExperience.title || !newExperience.company || !newExperience.description || !newExperience.duration)) {
-      alert('You have to fill out the last form')
-      return
-    }
-    setShowForm(true)
-  }
-
-  const handleSaveExperience = async (e) => {
-    e.preventDefault()
-    if (!newExperience.title || !newExperience.company || !newExperience.description || !newExperience.duration) {
-      alert('All fields are required')
-      return
-    }
-    const fullExperience = newExperience.title
-      + " at " + newExperience.company + " for " +
-      newExperience.duration + " months."
-      + "\n" + newExperience.description
-
-    // Create embedding for experience description
-    const openAIWorkerUrl = "https://openai-worker.marsescobin.workers.dev/"
-    const openAIWorkerResponse = await fetch(openAIWorkerUrl,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input: fullExperience })
-      });
-
-    const experienceEmbedding = await openAIWorkerResponse.json()
-    // Save to Supabase
-    const supabaseWorkerUrl = "https://supabase-worker.marsescobin.workers.dev/"
-
-    const supabaseWorkerResponse = await fetch(supabaseWorkerUrl,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          first_name: firstName, // New field
-          last_name: lastName,   // New field
-          summary: summary,      // New field
-          hours: parseInt(hoursAvailability), // Updated to use new state
-          timezones: selectedTimezones, // Updated to save multiple timezones
-          title: newExperience.title,
-          company: newExperience.company,
-          experience_description: fullExperience,
-          experience_duration: parseInt(newExperience.duration),
-          description_embedding: experienceEmbedding.data[0].embedding
-        })
-      });
-
-    const supabaseResult = await supabaseWorkerResponse.json();
-    setExperiences([...experiences, { ...newExperience, hours: hoursAvailability }]) // Updated to use new state
-    setNewExperience({ title: '', company: '', description: '', duration: '' })
-    setShowForm(false)
-
-  }
-
-  const isFormFilled = newExperience.title && newExperience.company && newExperience.description && newExperience.duration
-
-  const handleSaveInfo = async (e) => {
+  // Update function name
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!firstName || !lastName || !summary || !hoursAvailability || selectedTimezones.length === 0 || !email) { // Check for email
-      alert('All fields are required');
+
+    const missingFields = [];
+
+    // Debugging: Check the contents of selectedTimezones
+    console.log('Selected Timezones:', selectedTimezones);
+
+    if (!firstName.trim()) missingFields.push('First Name');
+    if (!lastName.trim()) missingFields.push('Last Name');
+    if (!email.trim()) missingFields.push('Email');
+    if (!professionalSummary.trim()) missingFields.push('Professional Summary');
+    if (!hoursAvailability.trim()) missingFields.push('Hours Availability');
+    if (selectedTimezones.length === 0) missingFields.push('Preferred Timezones');
+
+    if (missingFields.length > 0) {
+      alert(`Please fill out the following fields: ${missingFields.join(', ')}`);
       return;
     }
 
-    // Save user info to Supabase
+    const formattedExperiences = experiences.map((exp, index) => {
+      const endDate = exp.currentlyEmployed ? 'present' : exp.endDate;
+      return `${index + 1}. ${exp.role} at ${exp.company} from ${exp.startDate} to ${endDate}. Their notable accomplishments include:\n- ${exp.accomplishments.split('. ').join('\n- ')}\n\nThey used the following software in that role:\n- ${exp.softwareUsed.split(', ').join('\n- ')}`;
+    }).join('\n\n');
+
+    const formSummary = `${firstName} ${lastName} is available to work ${hoursAvailability} hours per week in the following timezones: ${selectedTimezones.join(", ")}\n\n` +
+      `Their professional summary says: ${professionalSummary}\n\n` +
+      `Their work experiences are:\n${formattedExperiences}`;
+
+    console.log("form summary: ", formSummary)
+
+    const profileSummaryEmbedding = await embedInfo(formSummary);
+
     const supabaseWorkerUrl = "https://supabase-worker.marsescobin.workers.dev/";
 
     const supabaseWorkerResponse = await fetch(supabaseWorkerUrl, {
@@ -146,20 +142,23 @@ function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        type: "basic_info",
         user_id: userId,
         first_name: firstName,
         last_name: lastName,
-        summary: summary,
-        hours: parseInt(hoursAvailability),
-        timezones: selectedTimezones,
-        email: email, // New field for email
+        email: email,
+        professional_summary: professionalSummary, // Updated field name
+        hours_availability: parseInt(hoursAvailability),
+        selected_timezones: selectedTimezones,
+        work_experiences: experiences,
+        profile_summary: formSummary,
+        profile_summary_embedding: profileSummaryEmbedding,
+        // Include experiences in the payload
       }),
     });
 
     const supabaseResult = await supabaseWorkerResponse.json();
-    // Optionally handle the response here
-    setIsInfoSaved(true); // Mark info as saved
-    setShowForm(true); // Show the experience form after saving info
+    setIsInfoSaved(true);
   };
 
   const handleEmailChange = (e) => { // New handler for email
@@ -170,83 +169,99 @@ function App() {
     <>
       <h1>DoerDriven</h1>
       <p>Share your experience and availability to join our remote work network. We'll match you with clients looking for your exact qualification.</p>
-      <form onSubmit={handleSaveInfo}>
-        <div>
-          <label htmlFor="firstName">First Name:</label>
-          <input type="text" id="firstName" name="firstName" value={firstName} onChange={handleFirstNameChange} />
-        </div>
-        <div>
-          <label htmlFor="lastName">Last Name:</label>
-          <input type="text" id="lastName" name="lastName" value={lastName} onChange={handleLastNameChange} />
-        </div>
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input type="email" id="email" name="email" value={email} onChange={handleEmailChange} required /> {/* New email input */}
-        </div>
-        <div>
-          <label htmlFor="summary">Summary:</label>
-          <input type="text" id="summary" name="summary" placeholder="Summarize your professional experience in 1-2 sentences." value={summary} onChange={handleSummaryChange} />
-        </div>
-        <div>
-          <label htmlFor="hoursAvailability">Hours Availability:</label>
-          <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours you're available to work per week" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
-        </div>
-        <div>
-          <label>Preferred Timezones:</label>
+      <div className='basicInfo'>
+        <form onSubmit={handleSubmit}>
           <div>
-            <input type="checkbox" id="pst" value="PST" checked={selectedTimezones.includes("PST")} onChange={handleTimezoneChange} />
-            <label htmlFor="pst">PST</label>
-            <input type="checkbox" id="cst" value="CST" checked={selectedTimezones.includes("CST")} onChange={handleTimezoneChange} />
-            <label htmlFor="cst">CST</label>
-            <input type="checkbox" id="mst" value="MST" checked={selectedTimezones.includes("MST")} onChange={handleTimezoneChange} />
-            <label htmlFor="mst">MST</label>
-            <input type="checkbox" id="est" value="EST" checked={selectedTimezones.includes("EST")} onChange={handleTimezoneChange} />
-            <label htmlFor="est">EST</label>
-            <input type="checkbox" id="all" value="all" checked={selectedTimezones.includes("all")} onChange={handleTimezoneChange} />
-            <label htmlFor="all">All</label>
+            <div className='form-group'>
+              <div className="name-container">
+                <div className='form-group'>
+                  <label htmlFor="firstName">First Name</label>
+                  <input className="input-firstName" type="text" id="firstName" name="firstName" value={firstName} onChange={handleFirstNameChange} />
+                </div>
+                <div className='form-group'>
 
+                  <label htmlFor="lastName">Last Name</label>
+                  <input className="input-lastName" type="text" id="lastName" name="lastName" value={lastName} onChange={handleLastNameChange} />
+                </div>
+              </div>
+            </div>
+            <div className='form-group'>
+              <label htmlFor="email">Email</label>
+              <input type="email" id="email" name="email" value={email} onChange={handleEmailChange} required />
+            </div>
+            <div className='form-group'>
+              <label htmlFor="professionalSummary">Professional Summary</label>
+              <textarea id="professionalSummary" name="professionalSummary" placeholder="Summarize your professional experience in 1-2 sentences" value={professionalSummary} onChange={handleProfessionalSummaryChange} />
+            </div>
+            <div className='form-group'>
+              <label htmlFor="hoursAvailability">Hours Availability</label>
+              <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours you're available to work per week" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
+            </div>
+            <div className='form-group'>
+              <label>Preferred Timezones</label>
+              <div className="timezone-container">
+                <label>
+                  <input type="checkbox" id="pst" value="PST" onChange={handleTimezoneChange} /><span>PST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="cst" value="CST" onChange={handleTimezoneChange} /><span>CST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="mst" value="MST" onChange={handleTimezoneChange} /><span>MST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="est" value="EST" onChange={handleTimezoneChange} /><span>EST</span>
+                </label>
+              </div>
+            </div>
           </div>
-        </div>
-        {!isInfoSaved && ( // Only show the button if info is not saved
-          <button type="submit">Save Info</button>
-        )}
-      </form>
-      <button onClick={handleAddExperience} disabled={showForm && !isFormFilled}>Add Experience</button>
-      {showForm && (
-        <form onSubmit={handleSaveExperience} className="experience-form">
-          <h2>Add Experience</h2>
-          <div>
-            <label htmlFor="title">Title:</label>
-            <input type="text" id="title" name="title" value={newExperience.title} onChange={handleInputChange} />
-          </div>
-          <div>
-            <label htmlFor="company">Client/Company:</label>
-            <input type="text" id="company" name="company" value={newExperience.company} onChange={handleInputChange} />
-          </div>
-          <div>
-            <label htmlFor="description">Notable accomplishments:</label>
-            <textarea id="description" name="description" value={newExperience.description} onChange={handleInputChange}></textarea>
-          </div>
-          <div>
-            <label htmlFor="duration">Duration (in months):</label>
-            <input type="number" id="duration" name="duration" value={newExperience.duration} onChange={handleInputChange} />
-          </div>
-          <button type="submit">Save Experience</button>
+          {experiences.map((experience, index) => (
+            <div key={index} className='workExperience'>
+              <h2>Add Experience</h2>
+              <div>
+                <label htmlFor={`role-${index}`}>Role</label>
+                <input type="text" id={`role-${index}`} name="role" value={experience.role} onChange={(e) => handleExperienceInputChange(index, e)} />
+              </div>
+              <div>
+                <label htmlFor={`company-${index}`}>Company or client name</label>
+                <input type="text" id={`company-${index}`} name="company" value={experience.company} onChange={(e) => handleExperienceInputChange(index, e)} />
+              </div>
+              <div>
+                <label htmlFor={`accomplishments-${index}`}>Notable Accomplishments</label>
+                <textarea type="text" id={`accomplishments-${index}`} name="accomplishments" value={experience.accomplishments} onChange={(e) => handleExperienceInputChange(index, e)} />
+              </div>
+              <div>
+                <label htmlFor={`startDate-${index}`}>Start Date</label>
+                <input type="date" id={`startDate-${index}`} name="startDate" value={experience.startDate} onChange={(e) => handleExperienceInputChange(index, e)} />
+              </div>
+              <div>
+                <label htmlFor={`endDate-${index}`}>End Date</label>
+                <input type="date" id={`endDate-${index}`} name="endDate" value={experience.endDate} onChange={(e) => handleExperienceInputChange(index, e)} disabled={experience.currentlyEmployed} />
+              </div>
+              <div>
+                <label htmlFor={`currentlyEmployed-${index}`}>Currently employed</label>
+                <input
+                  type="checkbox"
+                  id={`currentlyEmployed-${index}`}
+                  name="currentlyEmployed"
+                  checked={experience.currentlyEmployed} // Use checked instead of value
+                  onChange={(e) => handleExperienceInputChange(index, e)}
+                  disabled={experience.endDate !== ''} // Disable if any character is present in endDate
+                />
+              </div>
+              <div>
+                <label htmlFor={`softwareUsed-${index}`}>Software used</label>
+                <input type="text" id={`softwareUsed-${index}`} name="softwareUsed" value={experience.softwareUsed} onChange={(e) => handleExperienceInputChange(index, e)} />
+              </div>
+            </div>
+          ))}
+          <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
+            Add {experiences.length === 0 ? '' : 'Another'} Experience
+          </button>
+          <button type="submit">Submit</button>
         </form>
-      )}
-      {name && <h2>Name: {name}</h2>}
-      {hours && <h2>Hours: {hours}</h2>}
+      </div>
 
-      <ul>
-        {experiences.map((exp, index) => (
-          <li key={index}>
-            <h3>{exp.title}</h3>
-            <p>{exp.company}</p>
-            <p>{exp.description}</p>
-            <p>{exp.duration} months</p>
-          </li>
-        ))}
-      </ul>
     </>
   )
 }
