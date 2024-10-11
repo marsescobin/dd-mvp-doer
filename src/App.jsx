@@ -98,7 +98,7 @@ function App() {
   };
 
   const handleAddTraining = () => {
-    setTraining([...training, { certification: '', institution: '', completionDate: '' }]);
+    setTraining([...training, { certification: '', institution: '', yearCompleted: '' }]);
   }
 
   // Function to handle input change for a specific experience
@@ -362,7 +362,7 @@ function App() {
             <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
               Add {experiences.length === 0 ? '' : 'Another'} Experience
             </button>
-            <button className="addTraining" onClick={handleAddTraining}>Add Certifications and Education</button>
+            <button className="addTraining" onClick={handleAddTraining}>Add Education and Certifications</button>
             <button type="submit">Submit</button>
           </form>
         </div>

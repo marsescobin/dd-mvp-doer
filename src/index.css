@@ -221,7 +221,8 @@ input[type="radio"]:checked {
 
 
 
-.addExperience {
+.addExperience,
+.addTraining {
   background-color: white;
   color: #535bf2;
 }
