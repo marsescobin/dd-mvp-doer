@@ -37,9 +37,22 @@ function App() {
   const [selectedPronouns, setSelectedPronouns] = useState(() => {
     return savedData?.selectedPronouns || '';
   }); // Initialize state for pronouns
+  const [education, setEducation] = useState(() => {
+    return savedData?.education || [];
+  });
 
   // Save form data to local storage whenever it changes
   useEffect(() => {
+    // Filter out incomplete experiences
+    const completeExperiences = experiences.filter(exp => {
+      return exp.role && exp.company && exp.accomplishments && exp.startDate && (exp.currentlyEmployed || exp.endDate);
+    });
+
+    // Filter out incomplete education entries
+    const completeEducation = education.filter(edu => {
+      return edu.institution && edu.certification && edu.yearCompleted;
+    });
+
     const formData = {
       firstName,
       lastName,
@@ -47,11 +60,14 @@ function App() {
       professionalSummary,
       hoursAvailability,
       selectedTimezones,
-      experiences,
+      experiences: completeExperiences, // Save only complete experiences
+      education: completeEducation, // Save only complete education entries
       selectedPronouns
     };
+
     localStorage.setItem('formData', JSON.stringify(formData));
-  }, [firstName, lastName, email, professionalSummary, hoursAvailability, selectedTimezones, experiences]);
+  }, [firstName, lastName, email, professionalSummary, hoursAvailability, selectedTimezones, experiences, education]);
+
   // Function to check if the last experience form is complete
   const isLastExperienceComplete = () => {
     if (experiences.length === 0) return true; // Allow adding the first experience
@@ -161,22 +177,34 @@ function App() {
 
     const missingFields = [];
 
-    // Debugging: Check the contents of selectedTimezones
-
+    // Check for missing fields in the basic info
     if (!firstName.trim()) missingFields.push('First Name');
     if (!lastName.trim()) missingFields.push('Last Name');
     if (!email.trim()) missingFields.push('Email');
     if (!professionalSummary.trim()) missingFields.push('Professional Summary');
-    if (isNaN(hoursAvailability) || hoursAvailability <= 0) missingFields.push('Hours Availability'); // Updated check
+    if (isNaN(hoursAvailability) || hoursAvailability <= 0) missingFields.push('Hours Availability');
     if (selectedTimezones.length === 0) missingFields.push('Preferred Timezones');
-    if (experiences.length === 0) missingFields.push('At least one Experience'); // New check for experiences
+
+    // Check for at least one complete experience
+    const completeExperiences = experiences.filter(exp => {
+      return exp.role && exp.company && exp.accomplishments && exp.startDate && (exp.currentlyEmployed || exp.endDate);
+    });
+
+    if (completeExperiences.length === 0) {
+      missingFields.push('At least one complete Experience');
+    }
+
+    // Check for at least one complete education entry
+    const completeEducation = education.filter(edu => {
+      return edu.institution && edu.certification && edu.yearCompleted;
+    });
 
     if (missingFields.length > 0) {
       alert(`Please fill out the following fields: ${missingFields.join(', ')}`);
       return;
     }
 
-    const formattedExperiences = experiences.map((exp, index) => {
+    const formattedExperiences = completeExperiences.map((exp, index) => {
       const endDate = exp.currentlyEmployed ? 'present' : exp.endDate;
       return `${index + 1}. ${exp.role} at ${exp.company} from ${exp.startDate} to ${endDate}. Their notable accomplishments include:\n- ${exp.accomplishments.split('. ').join('\n- ')}\n\nThey used the following software in that role:\n- ${exp.softwareUsed.split(', ').join('\n- ')}`;
     }).join('\n\n');
@@ -184,7 +212,6 @@ function App() {
     const formSummary = `${firstName} ${lastName} is available to work ${hoursAvailability} hours per week in the following timezones: ${selectedTimezones.join(", ")}\n\n` +
       `Their professional summary says: ${professionalSummary}\n\n` +
       `Their work experiences are:\n${formattedExperiences}`;
-
 
     const profileSummaryEmbedding = await embedInfo(formSummary);
 
@@ -205,7 +232,8 @@ function App() {
           professional_summary: professionalSummary,
           hours_availability: parseInt(hoursAvailability),
           selected_timezones: selectedTimezones,
-          work_experiences: experiences,
+          work_experiences: completeExperiences, // Send only complete experiences
+          education: completeEducation, // Send only complete education entries
           profile_summary: formSummary,
           profile_summary_embedding: profileSummaryEmbedding,
         }),
@@ -231,6 +259,7 @@ function App() {
         setHoursAvailability('');
         setSelectedTimezones([]);
         setExperiences([]);
+        setEducation([]); // Reset education state
         setApplicationId(nanoid());
       } else {
         console.error('Submission failed:', supabaseResult);
@@ -244,6 +273,19 @@ function App() {
 
   const handleEmailChange = (e) => { // New handler for email
     setEmail(e.target.value);
+  };
+
+  // Function to add a new education form
+  const handleAddEducation = () => {
+    setEducation([...education, { institution: '', certification: '', yearCompleted: '' }]);
+  };
+
+  // Function to handle input change for a specific education entry
+  const handleEducationInputChange = (index, e) => {
+    const { name, value } = e.target;
+    const newEducation = [...education];
+    newEducation[index][name] = value;
+    setEducation(newEducation);
   };
 
   return (
@@ -362,7 +404,24 @@ function App() {
             <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
               Add {experiences.length === 0 ? '' : 'Another'} Experience
             </button>
-            <button className="addTraining" onClick={handleAddTraining}>Add Education and Certifications</button>
+            {education.map((edu, index) => (
+              <div key={index} className='education'>
+                <h2>Education {index + 1}</h2>
+                <div className="form-group">
+                  <label htmlFor={`institution-${index}`}>Institution</label>
+                  <input type="text" id={`institution-${index}`} name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor={`certification-${index}`}>Certification or Specialization</label>
+                  <input type="text" id={`certification-${index}`} name="certification" value={edu.certification} onChange={(e) => handleEducationInputChange(index, e)} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor={`yearCompleted-${index}`}>Year Completed</label>
+                  <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
+                </div>
+              </div>
+            ))}
+            <button className="addEducation" onClick={handleAddEducation}>Add Education</button>
             <button type="submit">Submit</button>
           </form>
         </div>
