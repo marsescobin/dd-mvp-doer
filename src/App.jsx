@@ -406,7 +406,7 @@ function App() {
             </button>
             {education.map((edu, index) => (
               <div key={index} className='education'>
-                <h2>Education {index + 1}</h2>
+                <h2>Certification {index + 1}</h2>
                 <div className="form-group">
                   <label htmlFor={`institution-${index}`}>Institution</label>
                   <input type="text" id={`institution-${index}`} name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
@@ -421,7 +421,7 @@ function App() {
                 </div>
               </div>
             ))}
-            <button className="addEducation" onClick={handleAddEducation}>Add Education</button>
+            <button className="addEducation" onClick={handleAddEducation}>Add Education or Certification</button>
             <button type="submit">Submit</button>
           </form>
         </div>
