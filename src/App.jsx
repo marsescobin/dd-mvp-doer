@@ -316,31 +316,6 @@ function App() {
                 <input type="email" id="email" name="email" value={email} onChange={handleEmailChange} required />
               </div>
               <div className='form-group'>
-                <label htmlFor="professionalSummary">Professional Summary</label>
-                <textarea id="professionalSummary" name="professionalSummary" placeholder="Summarize your professional experience in 1-2 sentences" value={professionalSummary} onChange={handleProfessionalSummaryChange} />
-              </div>
-              <div className='form-group'>
-                <label htmlFor="hoursAvailability">Hours Availability</label>
-                <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours you're available to work per week" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
-              </div>
-              <div className='form-group'>
-                <label>Preferred Timezones</label>
-                <div className="timezone-container">
-                  <label>
-                    <input type="checkbox" id="pst" value="PST" onChange={handleTimezoneChange} /><span>PST</span>
-                  </label>
-                  <label>
-                    <input type="checkbox" id="cst" value="CST" onChange={handleTimezoneChange} /><span>CST</span>
-                  </label>
-                  <label>
-                    <input type="checkbox" id="mst" value="MST" onChange={handleTimezoneChange} /><span>MST</span>
-                  </label>
-                  <label>
-                    <input type="checkbox" id="est" value="EST" onChange={handleTimezoneChange} /><span>EST</span>
-                  </label>
-                </div>
-              </div>
-              <div className='form-group'>
                 <label>Preferred Pronouns</label>
                 <div className="pronouns-container">
                   <label>
@@ -358,6 +333,32 @@ function App() {
                 </div>
               </div>
             </div>
+            <div className='form-group'>
+              <label htmlFor="professionalSummary">Professional Summary</label>
+              <textarea id="professionalSummary" name="professionalSummary" placeholder="Summarize your professional experience in 1-2 sentences" value={professionalSummary} onChange={handleProfessionalSummaryChange} />
+            </div>
+            <div className='form-group'>
+              <label htmlFor="hoursAvailability">Hours Availability</label>
+              <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours you're available to work per week" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
+            </div>
+            <div className='form-group'>
+              <label>Preferred Timezones</label>
+              <div className="timezone-container">
+                <label>
+                  <input type="checkbox" id="pst" value="PST" onChange={handleTimezoneChange} /><span>PST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="cst" value="CST" onChange={handleTimezoneChange} /><span>CST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="mst" value="MST" onChange={handleTimezoneChange} /><span>MST</span>
+                </label>
+                <label>
+                  <input type="checkbox" id="est" value="EST" onChange={handleTimezoneChange} /><span>EST</span>
+                </label>
+              </div>
+            </div>
+
             {experiences.map((experience, index) => (
               <div key={index} className='workExperience'>
                 <h2>Work Experience {index + 1}</h2>
