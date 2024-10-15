@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { createClient } from '@supabase/supabase-js'
 import { nanoid } from 'nanoid' // Import nanoid
@@ -41,6 +41,15 @@ function App() {
     return savedData?.education || [];
   });
   const [errorMessages, setErrorMessages] = useState([]); // State for error messages
+
+  const errorRef = useRef(null); // Create a ref for the error message container
+
+  // Scroll to error messages when they are updated
+  useEffect(() => {
+    if (errorMessages.length > 0 && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [errorMessages]);
 
   // Save form data to local storage whenever it changes
   useEffect(() => {
@@ -106,7 +115,8 @@ function App() {
   }
 
   // Function to add a new experience form
-  const handleAddExperience = () => {
+  const handleAddExperience = (e) => {
+    e.preventDefault(); // Prevent form submission
     if (isLastExperienceComplete()) {
       setExperiences([...experiences, { role: '', company: '', accomplishments: '', startDate: '', endDate: '', currentlyEmployed: false, softwareUsed: '' }]);
     } else {
@@ -282,7 +292,8 @@ function App() {
   };
 
   // Function to add a new education form
-  const handleAddEducation = () => {
+  const handleAddEducation = (e) => {
+    e.preventDefault(); // Prevent form submission
     setEducation([...education, { institution: '', certification: '', yearCompleted: '' }]);
   };
 
@@ -297,17 +308,23 @@ function App() {
   return (
     <>
       <h1>DoerDriven</h1>
+      {isSubmitted ? "" :
+        <div className='basicInfo-text'>
+          <p>Apply as a Doer and join our network of remote workers.
+            We'll match you with the right clients and projects based on your skills and availability.
+          </p>
+        </div>
+      }
       {isSubmitted ? (
         <div className="confirmation-message">
           Thank you for your submission!
         </div>
       ) : (
         <div className='basicInfo'>
-          <p>Apply as a Doer and join our world-wide network of remote workers.</p>
           <form onSubmit={handleSubmit}>
             {/* Display error messages */}
             {errorMessages.length > 0 && (
-              <div className="error-messages">
+              <div className="error-messages" ref={errorRef}>
                 {errorMessages.map((msg, index) => (
                   <p key={index} className="error">{msg}</p>
                 ))}
@@ -321,7 +338,6 @@ function App() {
                     <input className="input-firstName" type="text" id="firstName" name="firstName" value={firstName} onChange={handleFirstNameChange} />
                   </div>
                   <div className='form-group'>
-
                     <label htmlFor="lastName">Last Name</label>
                     <input className="input-lastName" type="text" id="lastName" name="lastName" value={lastName} onChange={handleLastNameChange} />
                   </div>
@@ -351,11 +367,11 @@ function App() {
             </div>
             <div className='form-group'>
               <label htmlFor="professionalSummary">Professional Summary</label>
-              <textarea id="professionalSummary" name="professionalSummary" placeholder="Summarize your professional experience in 1-2 sentences" value={professionalSummary} onChange={handleProfessionalSummaryChange} />
+              <textarea id="professionalSummary" name="professionalSummary" placeholder="What's a good way to summarize your professional experience? Keep it straight to the point. 1-2 sentences is best." value={professionalSummary} onChange={handleProfessionalSummaryChange} />
             </div>
             <div className='form-group'>
               <label htmlFor="hoursAvailability">Hours Availability</label>
-              <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours you're available to work per week" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
+              <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours can you work per week?" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
             </div>
             <div className='form-group'>
               <label>Preferred Timezones</label>
@@ -414,7 +430,6 @@ function App() {
                     disabled={experience.endDate !== ''}
                   />
                   <label htmlFor={`currentlyEmployed-${index}`}>Currently employed here</label>
-
                 </div>
               </div>
             ))}
