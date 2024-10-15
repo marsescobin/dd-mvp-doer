@@ -40,6 +40,7 @@ function App() {
   const [education, setEducation] = useState(() => {
     return savedData?.education || [];
   });
+  const [errorMessages, setErrorMessages] = useState([]); // State for error messages
 
   // Save form data to local storage whenever it changes
   useEffect(() => {
@@ -176,6 +177,7 @@ function App() {
     e.preventDefault();
 
     const missingFields = [];
+    const newErrorMessages = [];
 
     // Check for missing fields in the basic info
     if (!firstName.trim()) missingFields.push('First Name');
@@ -200,7 +202,8 @@ function App() {
     });
 
     if (missingFields.length > 0) {
-      alert(`Please fill out the following fields: ${missingFields.join(', ')}`);
+      newErrorMessages.push(`Please fill out the following fields: ${missingFields.join(', ')}`);
+      setErrorMessages(newErrorMessages);
       return;
     }
 
@@ -247,6 +250,7 @@ function App() {
 
       if (supabaseResult && supabaseResult.success) {
         setIsSubmitted(true); // Set form as submitted
+        setErrorMessages([]); // Clear error messages on success
 
         // Clear local storage after successful submission
         localStorage.removeItem('formData');
@@ -263,11 +267,13 @@ function App() {
         setApplicationId(nanoid());
       } else {
         console.error('Submission failed:', supabaseResult);
-        alert('Submission failed. Please try again.');
+        newErrorMessages.push('Submission failed. Please try again.');
+        setErrorMessages(newErrorMessages);
       }
     } catch (error) {
       console.error('Error during submission:', error);
-      alert('An error occurred during submission. Please try again.');
+      newErrorMessages.push('An error occurred during submission. Please try again.');
+      setErrorMessages(newErrorMessages);
     }
   };
 
@@ -291,12 +297,22 @@ function App() {
   return (
     <>
       <h1>DoerDriven</h1>
-      <p>Apply as a Doer and join our world-wide network of remote workers. </p>
       {isSubmitted ? (
-        <div className="confirmation-message">Thank you for your submission! We will get back to you soon.</div>
+        <div className="confirmation-message">
+          Thank you for your submission!
+        </div>
       ) : (
         <div className='basicInfo'>
+          <p>Apply as a Doer and join our world-wide network of remote workers.</p>
           <form onSubmit={handleSubmit}>
+            {/* Display error messages */}
+            {errorMessages.length > 0 && (
+              <div className="error-messages">
+                {errorMessages.map((msg, index) => (
+                  <p key={index} className="error">{msg}</p>
+                ))}
+              </div>
+            )}
             <div>
               <div className='form-group'>
                 <div className="name-container">
