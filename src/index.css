@@ -292,7 +292,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     align-items: flex-start;
   }
 
-  utton {
+  button {
     -webkit-appearance: none;
     /* Remove default styling */
     appearance: none;
