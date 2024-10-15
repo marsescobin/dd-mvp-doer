@@ -8,12 +8,19 @@
   background: linear-gradient(45deg, rgba(147, 138, 227, 0.5) 45%, rgba(242, 168, 156, 0.5) 100%);
   ;
 
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
 }
+
+
+
+
 
 a {
   font-weight: 500;
@@ -27,6 +34,7 @@ a:hover {
 
 body {
   margin: 0;
+
   display: flex;
   place-items: center;
   min-width: 320px;
@@ -157,7 +165,8 @@ button:focus-visible {
 
 }
 
-.form-group input {
+.form-group input,
+textarea {
   width: 100%;
   /* Make inputs take full width of their container */
   height: 40px;
@@ -238,7 +247,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 600px) {
   body {
     flex-direction: column;
-    padding: 1rem;
+    margin: auto;
+
   }
 
   .label-name {
@@ -260,14 +270,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-bottom: 0.5rem;
   }
 
-  .form-group input {
-    width: 100%;
-  }
 
   .name-container,
   .date-container {
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.5rem;
+  }
+
+  .name-container .form-group {
+    width: 100%;
   }
 
   .timezone-container,
@@ -283,43 +294,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Media query for very small screens (375px or less) */
-@media (max-width: 375px) {
-  body {
-    padding: 0.5rem;
-  }
 
-  h1 {
-    font-size: 2.5em;
-    margin: 0.5rem auto;
-  }
-
-  .label-name {
-    gap: 0.25rem;
-  }
-
-  .form-group {
-    padding: 0.5rem;
-  }
-
-  .form-group label {
-    font-size: 0.9em;
-  }
-
-  .form-group input {
-    padding: 0.4rem;
-  }
-
-  .timezone-container,
-  .pronouns-container,
-  .currently-employed-container {
-    padding: 0.5rem;
-  }
-
-  button {
-    padding: 0.5em 1em;
-    font-size: 0.9em;
-  }
-}
 
 /* App.css */
 
