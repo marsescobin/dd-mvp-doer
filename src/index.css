@@ -246,8 +246,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 600px) {
   body {
     flex-direction: column;
-    margin: auto;
-
+    margin: 0;
   }
 
   .label-name {
@@ -269,6 +268,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-bottom: 0.5rem;
   }
 
+  .form-group input,
+  textarea {
+    margin: auto;
+  }
 
   .name-container,
   .date-container {
