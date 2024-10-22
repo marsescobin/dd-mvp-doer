@@ -6,20 +6,13 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background: linear-gradient(45deg, rgba(147, 138, 227, 0.5) 45%, rgba(242, 168, 156, 0.5) 100%);
-  ;
-
   background-repeat: no-repeat;
   background-attachment: fixed;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
 }
-
-
-
 
 a {
   font-weight: 500;
@@ -64,11 +57,15 @@ h1 {
 
 .label-firstName,
 .label-lastName {
-  width: 45%;
+  width: 50%;
 
 }
 
-
+.resume-preview {
+  background-color: white;
+  color: #454545;
+  font-family: 'Inter', sans-serif;
+}
 
 
 button {
@@ -182,7 +179,8 @@ textarea {
 }
 
 .name-container,
-.date-container {
+.date-container,
+.location-container {
   gap: 1rem;
   flex-direction: row;
 
@@ -230,7 +228,8 @@ input[type="radio"]:checked {
 
 
 .addExperience,
-.addEducation {
+.addEducation,
+.addService {
   background-color: white;
   color: #535bf2;
 }
@@ -249,6 +248,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin: 0;
   }
 
+  .form-and-preview {
+    flex-direction: column;
+    /* Stack form and preview vertically */
+    width: 100%;
+    /* Ensure full width on mobile */
+  }
+
+  .basicInfo,
+  .resume-preview {
+    width: 100%;
+    /* Full width for both sections */
+    padding: 20px;
+  }
+
+  .resume-preview {
+    border-left: none;
+    /* Remove border to avoid visual clutter */
+    border-top: 1px solid #ccc;
+    /* Optional: add a top border for separation */
+  }
+
   .label-name {
     flex-direction: column;
     gap: 0.5rem;
@@ -262,6 +282,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .form-group {
     flex-direction: column;
     align-items: flex-start;
+    /* Ensure full width on mobile */
   }
 
   .form-group label {
@@ -271,11 +292,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .form-group input,
   textarea {
     margin: auto;
+    /* Ensure full width on mobile */
   }
 
   .name-container,
   .date-container {
     flex-direction: row;
+    width: 100%;
+    /* Change to column for better stacking */
     gap: 0.5rem;
   }
 
@@ -296,30 +320,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   button {
     -webkit-appearance: none;
-    /* Remove default styling */
     appearance: none;
     background-color: #535bf2;
-    /* Custom background color */
     color: white;
-    /* Custom text color */
     border: none;
-    /* Remove default border */
     padding: 0.6em 1.2em;
-    /* Add padding */
     border-radius: 8px;
-    /* Rounded corners */
     cursor: pointer;
-    /* Pointer cursor on hover */
     transition: background-color 0.3s;
-    /* Smooth transition */
+    width: 100%;
+    /* Ensure full width on mobile */
   }
 
   button:disabled {
     background-color: #ccc;
-    /* Lighter color for disabled state */
     color: #666;
     cursor: not-allowed;
-    /* Indicate non-clickable */
   }
 }
 
@@ -343,4 +359,126 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .error {
   margin: 0;
   padding: 5px 0;
+}
+
+strong {
+  color: #005BA2;
+}
+
+/* src/App.css */
+.app-container {
+  justify-content: space-between;
+}
+
+.form-and-preview {
+  display: flex;
+  width: 100%;
+}
+
+.basicInfo {
+  width: 50%;
+  padding: 20px;
+}
+
+.resume-preview {
+  width: 50%;
+  padding: 20px;
+  border-left: 1px solid #ccc;
+}
+
+.resume-preview h2 {
+  margin-bottom: 20px;
+}
+
+.resume-preview h3 {
+  margin-top: 0;
+}
+
+.resume-preview p {
+  margin: 5px 0;
+}
+
+/* Resume Preview */
+
+.resume-preview {
+  position: sticky;
+  top: 0;
+  width: 600px;
+  height: 100vh;
+  overflow: auto;
+  padding: 3rem;
+  font-size: 12px;
+}
+
+.rp-columns {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+.rp-column1 {
+  width: 70%;
+}
+
+.rp-column2 {
+  width: 30%;
+}
+
+.rp-header {
+  margin-bottom: 2rem;
+  color: #005BA2;
+
+}
+
+.rp-header h3 {
+  font-size: 1.5rem;
+  display: inline;
+}
+
+.rp-header span {
+  display: block;
+  font-size: 0.5rem;
+  color: #454545;
+
+}
+
+
+
+.rp-overview h4,
+.rp-tools h4,
+.rp-overview ul,
+.rp-tools ul {
+  padding: 0;
+}
+
+.rp-overview li,
+.rp-tools li {
+  word-wrap: break-word;
+  font-size: 0.65rem;
+  margin-bottom: 0.2rem;
+
+}
+
+.rp-work-experience-item,
+.rp-education-item {
+  margin: 1rem;
+}
+
+.rp-work-experience-item h4 {
+  font-weight: 400;
+}
+
+
+.rp-work-experience h4 {
+  margin-bottom: 0;
+}
+
+.rp-work-experience-dates,
+.rp-education-year {
+  font-size: 0.65rem;
+  margin-right: auto;
+}
+
+.rp-education-item p {
+  margin-bottom: 0;
 }

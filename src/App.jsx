@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { createClient } from '@supabase/supabase-js'
 import { nanoid } from 'nanoid' // Import nanoid
+import ResumePreview from './ResumePreview'
+import html2pdf from 'html2pdf.js';
+
 
 // Initialize Supabase client
 
@@ -41,6 +44,15 @@ function App() {
     return savedData?.education || [];
   });
   const [errorMessages, setErrorMessages] = useState([]); // State for error messages
+  const [city, setCity] = useState(() => {
+    return savedData?.city || '';
+  });
+  const [country, setCountry] = useState(() => {
+    return savedData?.country || '';
+  });
+  const [services, setServices] = useState(() => {
+    return savedData?.services || [];
+  });
 
   const errorRef = useRef(null); // Create a ref for the error message container
 
@@ -63,6 +75,11 @@ function App() {
       return edu.institution && edu.certification && edu.yearCompleted;
     });
 
+    // Filter out incomplete services
+    const completeServices = services.filter(service => {
+      return service.service && service.hourlyRate;
+    });
+
     const formData = {
       firstName,
       lastName,
@@ -72,19 +89,23 @@ function App() {
       selectedTimezones,
       experiences: completeExperiences, // Save only complete experiences
       education: completeEducation, // Save only complete education entries
-      selectedPronouns
+      selectedPronouns,
+      city, // Save city
+      country, // Save country
+      services: completeServices // Save only complete services
     };
 
     localStorage.setItem('formData', JSON.stringify(formData));
-  }, [firstName, lastName, email, professionalSummary, hoursAvailability, selectedTimezones, experiences, education]);
+  }, [firstName, lastName, email, professionalSummary, hoursAvailability, selectedTimezones, experiences, education, city, country, services]);
 
   // Function to check if the last experience form is complete
   const isLastExperienceComplete = () => {
     if (experiences.length === 0) return true; // Allow adding the first experience
     const lastExperience = experiences[experiences.length - 1];
-    // Check if all fields are filled, except endDate if currentlyEmployed is true
+    // Check if all fields are filled, except endDate if currentlyEmployed is true and excluding softwareUsed
     return Object.entries(lastExperience).every(([key, value]) => {
       if (key === 'endDate' && lastExperience.currentlyEmployed) return true;
+      if (key === 'softwareUsed') return true; // Do not require softwareUsed to be filled
       return value !== '';
     });
   };
@@ -136,7 +157,12 @@ function App() {
     // Update the field value
     newExperiences[index][name] = type === 'checkbox' ? checked : value;
 
-    // Validate end date is not before start date
+    // Replace '- ' with a newline in accomplishments
+    if (name === 'accomplishments') {
+      newExperiences[index][name] = value.replace(/(^|\n)-\s(?!\w)/g, '$1• ');
+    }
+
+
 
 
     setExperiences(newExperiences);
@@ -182,6 +208,26 @@ function App() {
     setSelectedPronouns(newPronoun); // Update state with selected pronoun
 
   }
+
+
+  const generatePDF = async () => {
+    const element = document.querySelector('.resume-preview');
+    const options = {
+      margin: 0,
+      filename: `${firstName}_${lastName}_resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    const pdfBlob = await html2pdf().from(element).set(options).outputPdf('blob');
+
+    // Return both pdfBlob and pdfUrl
+    return { pdfBlob };
+  };
+
+
+
   // Update function name
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -228,53 +274,62 @@ function App() {
 
     const profileSummaryEmbedding = await embedInfo(formSummary);
 
+    const { pdfBlob } = await generatePDF();
+    console.log('PDF Blob:', pdfBlob); // Check if this is a valid Blob
+
     const supabaseWorkerUrl = "https://supabase-worker.marsescobin.workers.dev/";
 
+    const formData = new FormData();
+    formData.append('application_id', applicationId);
+    formData.append('first_name', firstName);
+    formData.append('last_name', lastName);
+    formData.append('email', email);
+    formData.append('professional_summary', professionalSummary);
+    formData.append('hours_availability', hoursAvailability);
+    formData.append('selected_timezones', JSON.stringify(selectedTimezones)); // Convert arrays to JSON strings
+    formData.append('work_experiences', JSON.stringify(completeExperiences));
+    formData.append('education', JSON.stringify(completeEducation));
+    formData.append('services', JSON.stringify(services));
+    formData.append('profile_summary', formSummary);
+    formData.append('profile_summary_embedding', JSON.stringify(profileSummaryEmbedding));
+    formData.append('City', city);
+    formData.append('Country', country);
+    formData.append('resume_pdf', pdfBlob); // Append the file
+    formData.append('selected_pronouns', selectedPronouns); // Add this line to include pronouns
+
     try {
-      const supabaseWorkerResponse = await fetch(supabaseWorkerUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "basic_info",
-          application_id: applicationId,
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          professional_summary: professionalSummary,
-          hours_availability: parseInt(hoursAvailability),
-          selected_timezones: selectedTimezones,
-          work_experiences: completeExperiences, // Send only complete experiences
-          education: completeEducation, // Send only complete education entries
-          profile_summary: formSummary,
-          profile_summary_embedding: profileSummaryEmbedding,
-        }),
+      const response = await fetch(supabaseWorkerUrl, {
+        method: 'POST',
+        body: formData,
       });
 
-      if (!supabaseWorkerResponse.ok) {
-        throw new Error(`HTTP error! status: ${supabaseWorkerResponse.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const supabaseResult = await supabaseWorkerResponse.json();
+      const supabaseResult = await response.json();
 
       if (supabaseResult && supabaseResult.success) {
-        setIsSubmitted(true); // Set form as submitted
-        setErrorMessages([]); // Clear error messages on success
 
-        // Clear local storage after successful submission
+        // Set isSubmitted to true after successful upload
+        setIsSubmitted(true);
+        setErrorMessages([]);
+
+        // Clear local storage and reset form state
         localStorage.removeItem('formData');
-
-        // Reset form state
         setFirstName('');
         setLastName('');
         setEmail('');
+        setSelectedPronouns('');
         setProfessionalSummary('');
         setHoursAvailability('');
         setSelectedTimezones([]);
         setExperiences([]);
-        setEducation([]); // Reset education state
+        setEducation([]);
         setApplicationId(nanoid());
+        setCity('');
+        setCountry('');
+        setServices([]);
       } else {
         console.error('Submission failed:', supabaseResult);
         newErrorMessages.push('Submission failed. Please try again.');
@@ -291,10 +346,22 @@ function App() {
     setEmail(e.target.value);
   };
 
+  // Function to check if the last education form is complete
+  const isLastEducationComplete = () => {
+    if (education.length === 0) return true; // Allow adding the first education entry
+    const lastEducation = education[education.length - 1];
+    // Check if all fields are filled
+    return Object.values(lastEducation).every(value => value.trim() !== '');
+  };
+
   // Function to add a new education form
   const handleAddEducation = (e) => {
     e.preventDefault(); // Prevent form submission
-    setEducation([...education, { institution: '', certification: '', yearCompleted: '' }]);
+    if (isLastEducationComplete()) {
+      setEducation([...education, { institution: '', certification: '', yearCompleted: '' }]);
+    } else {
+      alert('Please fill out all fields in the last education form before adding a new one.');
+    }
   };
 
   // Function to handle input change for a specific education entry
@@ -305,159 +372,246 @@ function App() {
     setEducation(newEducation);
   };
 
+  const handleCityChange = (e) => {
+    setCity(e.target.value);
+  };
+
+  const handleCountryChange = (e) => {
+    setCountry(e.target.value);
+  };
+
+  const softwareTools = Array.from(new Set(
+    experiences.flatMap(exp => exp.softwareUsed.split(',').map(tool => tool.trim()))
+  ));
+
+  // Function to check if the last service form is complete
+  const isLastServiceComplete = () => {
+    if (services.length === 0) return true; // Allow adding the first service
+    const lastService = services[services.length - 1];
+    // Check if all required fields are filled
+    return lastService.service.trim() !== '' && lastService.hourlyRate !== '';
+  };
+
+  // Function to add a new service form
+  const handleAddService = () => {
+    if (isLastServiceComplete()) {
+      setServices([...services, { service: '', hourlyRate: '', description: '' }]);
+    } else {
+      alert('Please fill out all fields in the last service form before adding a new one.');
+    }
+  };
+
+  // Function to handle input change for a specific service
+  const handleServiceInputChange = (index, e) => {
+    const { name, value } = e.target;
+    const newServices = [...services];
+    newServices[index][name] = value;
+    setServices(newServices);
+  };
+
   return (
     <>
       <h1>DoerDriven</h1>
-      {isSubmitted ? "" :
-        <div className='basicInfo-text'>
-          <p>Apply as a Doer and join our network of remote workers.
-            We'll match you with the right clients and projects based on your skills and availability.
-          </p>
-        </div>
-      }
-      {isSubmitted ? (
-        <div className="confirmation-message">
-          Thank you for your submission!
-        </div>
-      ) : (
-        <div className='basicInfo'>
-          <form onSubmit={handleSubmit}>
-            {/* Display error messages */}
-            {errorMessages.length > 0 && (
-              <div className="error-messages" ref={errorRef}>
-                {errorMessages.map((msg, index) => (
-                  <p key={index} className="error">{msg}</p>
-                ))}
-              </div>
-            )}
-            <div>
-              <div className='form-group'>
-                <div className="name-container">
+      <div className="app-container">
+        {isSubmitted ? "" :
+          <div className='basicInfo-text'>
+            <p>Apply as a Doer and join our network of remote workers.
+              We'll match you with the right clients and projects based on your skills and availability.
+            </p>
+          </div>
+        }
+        {isSubmitted ? (
+          <div className="confirmation-message">
+            Thank you for your submission!
+          </div>
+        ) : (
+          <div className="form-and-preview">
+            <div className='basicInfo'>
+              <form onSubmit={handleSubmit}>
+                {/* Display error messages */}
+                {errorMessages.length > 0 && (
+                  <div className="error-messages" ref={errorRef}>
+                    {errorMessages.map((msg, index) => (
+                      <p key={index} className="error">{msg}</p>
+                    ))}
+                  </div>
+                )}
+                <div>
                   <div className='form-group'>
-                    <label htmlFor="firstName">First Name</label>
-                    <input className="input-firstName" type="text" id="firstName" name="firstName" value={firstName} onChange={handleFirstNameChange} />
+                    <div className="name-container">
+                      <div className='form-group'>
+                        <label htmlFor="firstName">First Name</label>
+                        <input className="input-firstName" type="text" id="firstName" name="firstName" value={firstName} onChange={handleFirstNameChange} />
+                      </div>
+                      <div className='form-group'>
+                        <label htmlFor="lastName">Last Name</label>
+                        <input className="input-lastName" type="text" id="lastName" name="lastName" value={lastName} onChange={handleLastNameChange} />
+                      </div>
+                    </div>
                   </div>
                   <div className='form-group'>
-                    <label htmlFor="lastName">Last Name</label>
-                    <input className="input-lastName" type="text" id="lastName" name="lastName" value={lastName} onChange={handleLastNameChange} />
+                    <label htmlFor="email">Email</label>
+                    <input type="email" id="email" name="email" value={email} onChange={handleEmailChange}
+                      placeholder='An active email address we cant contact you from' required />
+                  </div>
+                  <div className='form-group'>
+                    <label>Preferred Pronouns</label>
+                    <div className="pronouns-container">
+                      <label>
+                        <input type="radio" name="pronouns" value="he/him" onChange={handlePronounsChange} checked={selectedPronouns === "he/him"} />
+                        <span>He/Him</span>
+                      </label>
+                      <label>
+                        <input type="radio" name="pronouns" value="she/her" onChange={handlePronounsChange} checked={selectedPronouns === "she/her"} />
+                        <span>She/Her</span>
+                      </label>
+                      <label>
+                        <input type="radio" name="pronouns" value="they/them" onChange={handlePronounsChange} checked={selectedPronouns === "they/them"} />
+                        <span>They/Them</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className='location-container'>
+                    <div className='form-group'>
+                      <label htmlFor="city">City</label>
+                      <input className="input-city" type="text" id="city" name="city" value={city} onChange={handleCityChange} />
+                    </div>
+                    <div className='form-group'>
+                      <label htmlFor="country">Country</label>
+                      <input className="input-country" type="text" id="country" name="country" value={country} onChange={handleCountryChange} />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className='form-group'>
-                <label htmlFor="email">Email</label>
-                <input type="email" id="email" name="email" value={email} onChange={handleEmailChange} required />
-              </div>
-              <div className='form-group'>
-                <label>Preferred Pronouns</label>
-                <div className="pronouns-container">
-                  <label>
-                    <input type="radio" name="pronouns" value="he/him" onChange={handlePronounsChange} checked={selectedPronouns === "he/him"} />
-                    <span>He/Him</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="pronouns" value="she/her" onChange={handlePronounsChange} checked={selectedPronouns === "she/her"} />
-                    <span>She/Her</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="pronouns" value="they/them" onChange={handlePronounsChange} checked={selectedPronouns === "they/them"} />
-                    <span>They/Them</span>
-                  </label>
+                <div className='form-group'>
+                  <label htmlFor="professionalSummary">Professional Summary</label>
+                  <textarea id="professionalSummary" name="professionalSummary" placeholder="What's a good way to summarize your professional experience? Keep it straight to the point. 1-2 sentences is best." value={professionalSummary} onChange={handleProfessionalSummaryChange} />
                 </div>
-              </div>
-            </div>
-            <div className='form-group'>
-              <label htmlFor="professionalSummary">Professional Summary</label>
-              <textarea id="professionalSummary" name="professionalSummary" placeholder="What's a good way to summarize your professional experience? Keep it straight to the point. 1-2 sentences is best." value={professionalSummary} onChange={handleProfessionalSummaryChange} />
-            </div>
-            <div className='form-group'>
-              <label htmlFor="hoursAvailability">Hours Availability</label>
-              <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours can you work per week?" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
-            </div>
-            <div className='form-group'>
-              <label>Preferred Timezones</label>
-              <div className="timezone-container">
-                <label>
-                  <input type="checkbox" id="pst" value="PST" onChange={handleTimezoneChange} /><span>PST</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="cst" value="CST" onChange={handleTimezoneChange} /><span>CST</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="mst" value="MST" onChange={handleTimezoneChange} /><span>MST</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="est" value="EST" onChange={handleTimezoneChange} /><span>EST</span>
-                </label>
-              </div>
-            </div>
+                <div className='form-group'>
+                  <label htmlFor="hoursAvailability">Hours Availability</label>
+                  <input type="number" id="hoursAvailability" name="hoursAvailability" placeholder="How many hours can you work per week?" value={hoursAvailability} onChange={handleHoursAvailabilityChange} />
+                </div>
+                <div className='form-group'>
+                  <label>Preferred Timezones</label>
+                  <div className="timezone-container">
+                    <label>
+                      <input type="checkbox" id="pst" value="PST" onChange={handleTimezoneChange} checked={selectedTimezones.includes('PST')} /><span>PST</span>
+                    </label>
+                    <label>
+                      <input type="checkbox" id="cst" value="CST" onChange={handleTimezoneChange} checked={selectedTimezones.includes('CST')} /><span>CST</span>
+                    </label>
+                    <label>
+                      <input type="checkbox" id="mst" value="MST" onChange={handleTimezoneChange} checked={selectedTimezones.includes('MST')} /><span>MST</span>
+                    </label>
+                    <label>
+                      <input type="checkbox" id="est" value="EST" onChange={handleTimezoneChange} checked={selectedTimezones.includes('EST')} /><span>EST</span>
+                    </label>
+                  </div>
+                </div>
 
-            {experiences.map((experience, index) => (
-              <div key={index} className='workExperience'>
-                <h2>Work Experience {index + 1}</h2>
-                <div className="form-group">
-                  <label htmlFor={`role-${index}`}>Role</label>
-                  <input type="text" id={`role-${index}`} placeholder="Add your role or job title" name="role" value={experience.role} onChange={(e) => handleExperienceInputChange(index, e)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`company-${index}`}>Company or Client Name</label>
-                  <input type="text" id={`company-${index}`} placeholder="Add the company or client name" name="company" value={experience.company} onChange={(e) => handleExperienceInputChange(index, e)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`accomplishments-${index}`}>Notable Accomplishments</label>
-                  <textarea type="text" id={`accomplishments-${index}`} name="accomplishments" placeholder="List things that you are proud to have accomplished in this role" value={experience.accomplishments} onChange={(e) => handleExperienceInputChange(index, e)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`softwareUsed-${index}`}>Software used</label>
-                  <input type="text" id={`softwareUsed-${index}`} placeholder="Add the software/s you mainly used in this role" name="softwareUsed" value={experience.softwareUsed} onChange={(e) => handleExperienceInputChange(index, e)} />
-                </div>
-                <div className="form-group date-container">
-                  <div>
-                    <label htmlFor={`startDate-${index}`}>Start Date</label>
-                    <input type="date" id={`startDate-${index}`} name="startDate" value={experience.startDate} onChange={(e) => handleExperienceInputChange(index, e)} />
+                {experiences.map((experience, index) => (
+                  <div key={index} className='workExperience'>
+                    <h2>Work Experience {index + 1}</h2>
+                    <div className="form-group">
+                      <label htmlFor={`role-${index}`}>Role</label>
+                      <input type="text" id={`role-${index}`} placeholder="Add your role or job title" name="role" value={experience.role} onChange={(e) => handleExperienceInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`company-${index}`}>Company or Client Name</label>
+                      <input type="text" id={`company-${index}`} placeholder="Add the company or client name" name="company" value={experience.company} onChange={(e) => handleExperienceInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`accomplishments-${index}`}>Notable Accomplishments</label>
+                      <textarea type="text" id={`accomplishments-${index}`} name="accomplishments" placeholder="List things that you are proud to have accomplished in this role. Use dash (-) to separate each accomplishment." value={experience.accomplishments} onChange={(e) => handleExperienceInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`softwareUsed-${index}`}>Software used</label>
+                      <input type="text" id={`softwareUsed-${index}`} placeholder="Add the software/s you used to be successful in this role" name="softwareUsed" value={experience.softwareUsed} onChange={(e) => handleExperienceInputChange(index, e)} />
+                    </div>
+                    <div className="form-group date-container">
+                      <div>
+                        <label htmlFor={`startDate-${index}`}>Start Date</label>
+                        <input type="date" id={`startDate-${index}`} name="startDate" value={experience.startDate} onChange={(e) => handleExperienceInputChange(index, e)} />
+                      </div>
+                      <div>
+                        <label htmlFor={`endDate-${index}`}>End Date</label>
+                        <input type="date" id={`endDate-${index}`} name="endDate" value={experience.endDate} onChange={(e) => handleExperienceInputChange(index, e)} disabled={experience.currentlyEmployed} />
+                      </div>
+                    </div>
+                    <div className="form-group currently-employed-container">
+                      <input
+                        type="checkbox"
+                        id={`currentlyEmployed-${index}`}
+                        name="currentlyEmployed"
+                        checked={experience.currentlyEmployed}
+                        onChange={(e) => handleExperienceInputChange(index, e)}
+                        disabled={experience.endDate !== ''}
+                      />
+                      <label htmlFor={`currentlyEmployed-${index}`}>Currently employed here</label>
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor={`endDate-${index}`}>End Date</label>
-                    <input type="date" id={`endDate-${index}`} name="endDate" value={experience.endDate} onChange={(e) => handleExperienceInputChange(index, e)} disabled={experience.currentlyEmployed} />
+                ))}
+                <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
+                  Add {experiences.length === 0 ? '' : 'Another'} Experience
+                </button>
+                {education.map((edu, index) => (
+                  <div key={index} className='education'>
+                    <h2>Training/Education {index + 1}</h2>
+                    <div className="form-group">
+                      <label htmlFor={`institution-${index}`}>Institution</label>
+                      <input type="text" id={`institution-${index}`} placeholder="University, Bootcamp, Training Institution, etc" name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`certification-${index}`}>Specialization</label>
+                      <input type="text" id={`certification-${index}`} name="certification" placeholder="Your focus of study or training specialization" value={edu.certification} onChange={(e) => handleEducationInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`yearCompleted-${index}`}>Year Completed</label>
+                      <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" placeholder="You can put 'ongoing' if you are still taking classes" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
+                    </div>
                   </div>
-                </div>
-                <div className="form-group currently-employed-container">
-                  <input
-                    type="checkbox"
-                    id={`currentlyEmployed-${index}`}
-                    name="currentlyEmployed"
-                    checked={experience.currentlyEmployed}
-                    onChange={(e) => handleExperienceInputChange(index, e)}
-                    disabled={experience.endDate !== ''}
-                  />
-                  <label htmlFor={`currentlyEmployed-${index}`}>Currently employed here</label>
-                </div>
-              </div>
-            ))}
-            <button className="addExperience" onClick={handleAddExperience} disabled={!isLastExperienceComplete()}>
-              Add {experiences.length === 0 ? '' : 'Another'} Experience
-            </button>
-            {education.map((edu, index) => (
-              <div key={index} className='education'>
-                <h2>Certification {index + 1}</h2>
-                <div className="form-group">
-                  <label htmlFor={`institution-${index}`}>Institution</label>
-                  <input type="text" id={`institution-${index}`} name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`certification-${index}`}>Certification or Specialization</label>
-                  <input type="text" id={`certification-${index}`} name="certification" value={edu.certification} onChange={(e) => handleEducationInputChange(index, e)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`yearCompleted-${index}`}>Year Completed</label>
-                  <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
-                </div>
-              </div>
-            ))}
-            <button className="addEducation" onClick={handleAddEducation}>Add Education or Certification</button>
-            <button type="submit">Submit</button>
-          </form>
-        </div>
-      )}
+                ))}
+                <button className="addEducation" onClick={handleAddEducation} disabled={!isLastEducationComplete()}>
+                  Add Training or Education
+                </button>
+                {services.map((service, index) => (
+                  <div key={index} className='service'>
+                    <h2>Service {index + 1}</h2>
+                    <div className="form-group">
+                      <label htmlFor={`service-${index}`}>Service</label>
+                      <input type="text" id={`service-${index}`} placeholder="E.g., Executive Assistance, Social Media Management, Graphic Design, Web Development, etc" name="service" value={service.service} onChange={(e) => handleServiceInputChange(index, e)} />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`hourlyRate-${index}`}>Hourly Rate (USD)</label>
+                      <input type="number" id={`hourlyRate-${index}`} placeholder="How much do you charge per hour?" name="hourlyRate" value={service.hourlyRate} onChange={(e) => handleServiceInputChange(index, e)} />
+                    </div>
+                  </div>
+                ))}
+                <button className="addService" onClick={handleAddService} disabled={!isLastServiceComplete()}>
+                  Add Service
+                </button>
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+            <ResumePreview
+              firstName={firstName}
+              lastName={lastName}
+              email={email}
+              professionalSummary={professionalSummary}
+              hoursAvailability={hoursAvailability}
+              selectedTimezones={selectedTimezones}
+              experiences={experiences}
+              education={education}
+              selectedPronouns={selectedPronouns}
+              softwareTools={softwareTools}
+              services={services}
+              city={city}
+              country={country}
+            // Pass the deduplicated software tools
+            />
+          </div >
+        )
+        }
+      </div >
     </>
   )
 }
