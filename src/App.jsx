@@ -558,7 +558,7 @@ function App() {
                     <h2>Training/Education {index + 1}</h2>
                     <div className="form-group">
                       <label htmlFor={`institution-${index}`}>Institution</label>
-                      <input type="text" id={`institution-${index}`} placeholder="University, Bootcamp, Training Institution, etc" name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
+                      <input type="text" id={`institution-${index}`} placeholder="University, Bootcamp, or Training Institution" name="institution" value={edu.institution} onChange={(e) => handleEducationInputChange(index, e)} />
                     </div>
                     <div className="form-group">
                       <label htmlFor={`certification-${index}`}>Specialization</label>
@@ -566,7 +566,7 @@ function App() {
                     </div>
                     <div className="form-group">
                       <label htmlFor={`yearCompleted-${index}`}>Year Completed</label>
-                      <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" placeholder="You can put 'ongoing' if you are still taking classes" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
+                      <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" placeholder="You may add 'ongoing' if you are still taking classes" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
                     </div>
                   </div>
                 ))}

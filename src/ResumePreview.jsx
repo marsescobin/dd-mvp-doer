@@ -43,7 +43,7 @@ const ResumePreview = ({
                 <h3 >
                     {lastName || 'Last Name'}
                 </h3>
-                <span className='rp-email'>{email.toUpperCase() || 'Email'}</span>
+                <span className='rp-email'>{email.toUpperCase() || 'EMAIL'}</span>
                 <div className="rp-professional-summary">
                     <p><strong>
                         {professionalSummary || 'Professional Summary'}
@@ -96,7 +96,7 @@ const ResumePreview = ({
                         {education.map((edu, index) => (
                             <div className='rp-education-item' key={index}>
                                 <p><strong>{edu.institution.trim()}</strong></p>
-                                <span className='rp-education-year'>{edu.certification},{edu.yearCompleted}</span>
+                                <span className='rp-education-year'>{edu.certification}, {edu.yearCompleted}</span>
                             </div>
                         ))}
                     </div>
