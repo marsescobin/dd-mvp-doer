@@ -452,7 +452,7 @@ function App() {
                   <div className='form-group'>
                     <label htmlFor="email">Email</label>
                     <input type="email" id="email" name="email" value={email} onChange={handleEmailChange}
-                      placeholder='An active email address we cant contact you from' required />
+                      placeholder='An active email address we can reach you at' required />
                   </div>
                   <div className='form-group'>
                     <label>Preferred Pronouns</label>
