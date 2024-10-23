@@ -592,7 +592,7 @@ function App() {
                 <button className="addService" onClick={handleAddService} disabled={!isLastServiceComplete()}>
                   Add Service
                 </button>
-                <button type="submit">Submit</button>
+                <button className='submit-button' type="submit">Submit</button>
               </form>
             </div>
             <ResumePreview
