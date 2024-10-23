@@ -570,7 +570,7 @@ function App() {
                     </div>
                     <div className="form-group">
                       <label htmlFor={`yearCompleted-${index}`}>Year Completed</label>
-                      <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" placeholder="You may add 'ongoing' if you are still taking classes" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
+                      <input type="text" id={`yearCompleted-${index}`} name="yearCompleted" placeholder="You may add 'ongoing'" value={edu.yearCompleted} onChange={(e) => handleEducationInputChange(index, e)} />
                     </div>
                   </div>
                 ))}
