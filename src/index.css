@@ -407,7 +407,7 @@ strong {
   height: 100vh;
   overflow: auto;
   padding: 3rem;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rp-columns {
@@ -431,7 +431,7 @@ strong {
 }
 
 .rp-header h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   display: inline;
 }
 

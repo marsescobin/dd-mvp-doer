@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
-import { createClient } from '@supabase/supabase-js'
 import { nanoid } from 'nanoid' // Import nanoid
 import ResumePreview from './ResumePreview'
 import html2pdf from 'html2pdf.js';
@@ -110,30 +109,6 @@ function App() {
     });
   };
 
-  const embedInfo = async (info) => {
-    const formattedExperiences = experiences.map((exp, index) => {
-      const endDate = exp.currentlyEmployed ? 'present' : exp.endDate;
-      return `${index + 1}. ${exp.role} at ${exp.company} from ${exp.startDate} to ${endDate}. Their notable accomplishments include:\n- ${exp.accomplishments.split('. ').join('\n- ')}\n\nThey used the following software in that role:\n- ${exp.softwareUsed.split(', ').join('\n- ')}.`;
-    }).join('\n\n');
-
-    const formSummary = `${firstName} ${lastName} is available to work ${hoursAvailability} hours per week in the following timezones: ${selectedTimezones.join(", ")}.\n\n` +
-      `Their professional summary says: ${professionalSummary}\n\n` +
-      `Their work experiences are:\n${formattedExperiences}`;
-
-    const openAIWorkerUrl = "https://openai-worker.marsescobin.workers.dev/";
-    const workerResponse = await fetch(openAIWorkerUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input: info,
-      }),
-    });
-    const workerResponseInJSON = await workerResponse.json();
-    const embedding = workerResponseInJSON.data[0].embedding;
-    return embedding;
-  }
 
   // Function to add a new experience form
   const handleAddExperience = (e) => {
@@ -144,10 +119,6 @@ function App() {
       alert('Please fill out all fields in the last experience form before adding a new one.');
     }
   };
-
-  const handleAddTraining = () => {
-    setTraining([...training, { certification: '', institution: '', yearCompleted: '' }]);
-  }
 
   // Function to handle input change for a specific experience
   const handleExperienceInputChange = (index, e) => {
@@ -161,10 +132,6 @@ function App() {
     if (name === 'accomplishments') {
       newExperiences[index][name] = value.replace(/(^|\n)-\s(?!\w)/g, '$1• ');
     }
-
-
-
-
     setExperiences(newExperiences);
   };
 
@@ -227,6 +194,21 @@ function App() {
   };
 
 
+  const embedInfo = async (info) => {
+    const openAIWorkerUrl = "https://openai-worker.marsescobin.workers.dev/";
+    const workerResponse = await fetch(openAIWorkerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: info,
+      }),
+    });
+    const workerResponseInJSON = await workerResponse.json();
+    const embedding = workerResponseInJSON.data[0].embedding;
+    return embedding;
+  }
 
   // Update function name
   const handleSubmit = async (e) => {
@@ -242,6 +224,8 @@ function App() {
     if (!professionalSummary.trim()) missingFields.push('Professional Summary');
     if (isNaN(hoursAvailability) || hoursAvailability <= 0) missingFields.push('Hours Availability');
     if (selectedTimezones.length === 0) missingFields.push('Preferred Timezones');
+    if (!city.trim()) missingFields.push('City');
+    if (!country.trim()) missingFields.push('Country');
 
     // Check for at least one complete experience
     const completeExperiences = experiences.filter(exp => {
@@ -257,6 +241,11 @@ function App() {
       return edu.institution && edu.certification && edu.yearCompleted;
     });
 
+    const completeServices = services.filter(service => {
+      return service.service && service.hourlyRate;
+    });
+
+
     if (missingFields.length > 0) {
       newErrorMessages.push(`Please fill out the following fields: ${missingFields.join(', ')}`);
       setErrorMessages(newErrorMessages);
@@ -268,9 +257,23 @@ function App() {
       return `${index + 1}. ${exp.role} at ${exp.company} from ${exp.startDate} to ${endDate}. Their notable accomplishments include:\n- ${exp.accomplishments.split('. ').join('\n- ')}\n\nThey used the following software in that role:\n- ${exp.softwareUsed.split(', ').join('\n- ')}`;
     }).join('\n\n');
 
+    const formattedEducation = completeEducation.map((edu, index) => {
+      return `${index + 1}. ${edu.institution} specializing in ${edu.certification} completed in ${edu.yearCompleted}`;
+    }).join('\n\n');
+
+    const formattedServices = completeServices.map((service, index) => {
+      return `${index + 1}. ${service.service} at ${service.hourlyRate} USD per hour`;
+    }).join('\n\n');
+
+
+
     const formSummary = `${firstName} ${lastName} is available to work ${hoursAvailability} hours per week in the following timezones: ${selectedTimezones.join(", ")}\n\n` +
       `Their professional summary says: ${professionalSummary}\n\n` +
-      `Their work experiences are:\n${formattedExperiences}`;
+      `Their work experiences are:\n${formattedExperiences}\n\n` +
+      `Their training and education are:\n${formattedEducation}\n\n` +
+      `Their services are:\n${formattedServices}`;
+
+    console.log(formSummary)
 
     const profileSummaryEmbedding = await embedInfo(formSummary);
 
