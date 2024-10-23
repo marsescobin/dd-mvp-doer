@@ -226,6 +226,7 @@ function App() {
     if (selectedTimezones.length === 0) missingFields.push('Preferred Timezones');
     if (!city.trim()) missingFields.push('City');
     if (!country.trim()) missingFields.push('Country');
+    if (selectedPronouns.trim() === '') missingFields.push('Preferred Pronouns');
 
     // Check for at least one complete experience
     const completeExperiences = experiences.filter(exp => {
